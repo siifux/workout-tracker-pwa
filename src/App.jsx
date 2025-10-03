@@ -165,6 +165,26 @@ export default function App() {
     }));
   };
 
+  const clearWeek = () => {
+    if (!confirm('Are you sure you want to clear all workouts for this week? This action cannot be undone.')) {
+      return;
+    }
+    
+    setData((d) => {
+      const newHistory = { ...d.history };
+      
+      // Clear all sessions for the current date across all days and both leg variants
+      dayOrder.forEach(day => {
+        const keyA = `${dateKey}_${day}_LVA`;
+        const keyB = `${dateKey}_${day}_LVB`;
+        delete newHistory[keyA];
+        delete newHistory[keyB];
+      });
+      
+      return { ...d, history: newHistory };
+    });
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-8">
@@ -221,6 +241,7 @@ export default function App() {
               <span className="text-sm font-semibold">Session</span>
               <div className="flex gap-2">
                 <button className="px-3 py-1 rounded-full text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={clearToday}>Clear Today</button>
+                <button className="px-3 py-1 rounded-full text-sm border border-red-300 dark:border-red-600 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20" onClick={clearWeek}>Clear Week</button>
               </div>
             </div>
           </div>
