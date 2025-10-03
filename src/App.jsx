@@ -28,7 +28,7 @@ const plan = {
     ],
   },
   LegsA: {
-    title: "Hamstring-Focused (Week A)",
+    title: "Hamstring-Focused (Variant A)",
     warmup: ["5–10 min dynamic + Walking Lunges"],
     exercises: [
       { name: "Seated Hamstring Curl", sets: 3, reps: "8–12", notes: "2 quick warm-up sets first" },
@@ -39,7 +39,7 @@ const plan = {
     ],
   },
   LegsB: {
-    title: "Quad-Focused (Week B)",
+    title: "Quad-Focused (Variant B)",
     warmup: ["Dynamic + Seated Leg Curl for knees"],
     exercises: [
       { name: "Hack or Smith Squat (feet lower)", sets: 3, reps: "6–10" },
@@ -83,8 +83,16 @@ function classNames(...cls) {
 const storageKey = "sixDaySplitTracker_v1";
 
 export default function App() {
-  const [weekType, setWeekType] = useState("A"); // A = Hamstrings, B = Quads
+  const [legVariant, setLegVariant] = useState("A"); // A = Hamstrings, B = Quads
   const [todayIndex, setTodayIndex] = useState(getTodayIndex());
+  const [isDarkMode, setIsDarkMode] = useState(() => {
+    try {
+      const saved = localStorage.getItem('darkMode');
+      return saved ? JSON.parse(saved) : false;
+    } catch (e) {
+      return false;
+    }
+  });
   const [data, setData] = useState(() => {
     try {
       const raw = localStorage.getItem(storageKey);
@@ -98,6 +106,19 @@ export default function App() {
     localStorage.setItem(storageKey, JSON.stringify(data));
   }, [data]);
 
+  useEffect(() => {
+    localStorage.setItem('darkMode', JSON.stringify(isDarkMode));
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [isDarkMode]);
+
+  const toggleDarkMode = () => {
+    setIsDarkMode(!isDarkMode);
+  };
+
   const currentDayLabel = dayOrder[todayIndex];
 
   const { blocks, titleSuffix } = useMemo(() => {
@@ -107,7 +128,7 @@ export default function App() {
       case "Pull & Abs":
         return { titleSuffix: "— Back-focused Pull + Abs", blocks: buildPullAbsBlock(plan.PullAbs) };
       case "Leg Day": {
-        const leg = weekType === "A" ? plan.LegsA : plan.LegsB;
+        const leg = legVariant === "A" ? plan.LegsA : plan.LegsB;
         return { titleSuffix: `— ${leg.title}`, blocks: buildSimpleBlock(leg) };
       }
       case "Upper Body":
@@ -115,10 +136,10 @@ export default function App() {
       default:
         return { titleSuffix: "— Rest & Recovery", blocks: [] };
     }
-  }, [currentDayLabel, weekType]);
+  }, [currentDayLabel, legVariant]);
 
   const dateKey = new Date().toISOString().slice(0, 10); // compute each render
-  const sessionKey = `${dateKey}_${currentDayLabel}_W${weekType}`;
+  const sessionKey = `${dateKey}_${currentDayLabel}_LV${legVariant}`;
   const session = data.history[sessionKey] || { completed: {}, notes: "" };
 
   const toggleSet = (exIndex, setIndex) => {
@@ -144,158 +165,154 @@ export default function App() {
     }));
   };
 
-  const exportData = () => {
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "workout-tracker-data.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importData = (file) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      try {
-        const json = JSON.parse(reader.result);
-        setData(json);
-      } catch (e) {
-        alert("Invalid JSON file.");
-      }
-    };
-    reader.readAsText(file);
-  };
 
   return (
-    <div className="min-h-screen bg-gray-50 text-gray-900 p-4 sm:p-8">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-8">
       <div className="max-w-3xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <div>
             <h1 className="text-2xl sm:text-3xl font-bold">6-Day Workout Split Tracker</h1>
-            <p className="text-sm text-gray-600">Exact exercises from the video • One leg day (alternating Week A/B)</p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Exact exercises from the video • One leg day (alternating Variant A/B)</p>
           </div>
           <div className="flex gap-2 items-center">
             <button
-              className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-100 text-sm"
+              className="px-3 py-2 rounded-2xl shadow bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
               onClick={() => setTodayIndex((i) => (i + dayOrder.length - 1) % dayOrder.length)}
             >◀</button>
-            <div className="px-3 py-2 rounded-2xl bg-white shadow text-sm font-medium">
+            <div className="px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 shadow text-sm font-medium">
               {currentDayLabel}
             </div>
             <button
-              className="px-3 py-2 rounded-2xl shadow bg-white hover:bg-gray-100 text-sm"
+              className="px-3 py-2 rounded-2xl shadow bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
               onClick={() => setTodayIndex((i) => (i + 1) % dayOrder.length)}
             >▶</button>
           </div>
         </header>
 
         <div className="grid sm:grid-cols-2 gap-3 mb-6">
-          <div className="p-3 bg-white rounded-2xl shadow">
+          <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl shadow">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Week</span>
+              <span className="text-sm font-semibold">Leg Variant</span>
               <div className="flex gap-2">
                 <button
                   className={classNames(
                     "px-3 py-1 rounded-full text-sm border",
-                    weekType === "A" ? "bg-black text-white border-black" : "bg-white hover:bg-gray-100"
+                    legVariant === "A" 
+                      ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white" 
+                      : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600"
                   )}
-                  onClick={() => setWeekType("A")}
+                  onClick={() => setLegVariant("A")}
                 >A (Hamstrings)</button>
                 <button
                   className={classNames(
                     "px-3 py-1 rounded-full text-sm border",
-                    weekType === "B" ? "bg-black text-white border-black" : "bg-white hover:bg-gray-100"
+                    legVariant === "B" 
+                      ? "bg-black dark:bg-white text-white dark:text-black border-black dark:border-white" 
+                      : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600"
                   )}
-                  onClick={() => setWeekType("B")}
+                  onClick={() => setLegVariant("B")}
                 >B (Quads)</button>
               </div>
             </div>
           </div>
 
-          <div className="p-3 bg-white rounded-2xl shadow">
+          <div className="p-3 bg-white dark:bg-gray-800 rounded-2xl shadow">
             <div className="flex items-center justify-between">
-              <span className="text-sm font-semibold">Data</span>
+              <span className="text-sm font-semibold">Session</span>
               <div className="flex gap-2">
-                <button className="px-3 py-1 rounded-full text-sm border hover:bg-gray-100" onClick={exportData}>Export</button>
-                <label className="px-3 py-1 rounded-full text-sm border hover:bg-gray-100 cursor-pointer">
-                  Import
-                  <input type="file" accept="application/json" className="hidden" onChange={(e) => e.target.files && importData(e.target.files[0])} />
-                </label>
-                <button className="px-3 py-1 rounded-full text-sm border hover:bg-gray-100" onClick={clearToday}>Clear Today</button>
+                <button className="px-3 py-1 rounded-full text-sm border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700" onClick={clearToday}>Clear Today</button>
               </div>
             </div>
           </div>
         </div>
 
-        <main className="bg-white rounded-2xl shadow p-4 sm:p-6">
-          <h2 className="text-xl font-semibold mb-1">{currentDayLabel} <span className="text-gray-500 text-base">{titleSuffix}</span></h2>
+        <main className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 sm:p-6">
+          <h2 className="text-xl font-semibold mb-1">{currentDayLabel} <span className="text-gray-500 dark:text-gray-400 text-base">{titleSuffix}</span></h2>
           {blocks.length === 0 ? (
-            <p className="text-gray-600">Rest & recovery. Get steps in, mobility, and prep meals.</p>
+            <p className="text-gray-600 dark:text-gray-400">Rest & recovery. Get steps in, mobility, and prep meals.</p>
           ) : (
             <div className="space-y-5">
-              {blocks.map((block, idx) => (
-                <section key={idx} className="border rounded-2xl p-4">
-                  <h3 className="font-semibold mb-2 flex items-center justify-between">
-                    <span>{block.title}</span>
-                    {block.subtitle && <span className="text-sm text-gray-500">{block.subtitle}</span>}
-                  </h3>
-                  {block.warmup && (
-                    <ul className="list-disc ml-5 text-sm text-gray-700 mb-3">
-                      {block.warmup.map((w, i) => (
-                        <li key={i}>{w}</li>
-                      ))}
-                    </ul>
-                  )}
-                  <div className="space-y-3">
-                    {block.items.map((ex, exIndex) => (
-                      <div key={exIndex} className="rounded-xl border p-3">
-                        <div className="flex items-start justify-between gap-3">
-                          <div>
-                            <div className="font-medium">{ex.name}</div>
-                            <div className="text-sm text-gray-600">Sets: {ex.sets} • Reps: {ex.reps}</div>
-                            {ex.notes && <div className="text-xs text-gray-500 mt-1">{ex.notes}</div>}
+              {(() => {
+                let globalExIndex = 0;
+                return blocks.map((block, idx) => (
+                  <section key={idx} className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
+                    <h3 className="font-semibold mb-2 flex items-center justify-between">
+                      <span>{block.title}</span>
+                      {block.subtitle && <span className="text-sm text-gray-500 dark:text-gray-400">{block.subtitle}</span>}
+                    </h3>
+                    {block.warmup && (
+                      <ul className="list-disc ml-5 text-sm text-gray-700 dark:text-gray-300 mb-3">
+                        {block.warmup.map((w, i) => (
+                          <li key={i}>{w}</li>
+                        ))}
+                      </ul>
+                    )}
+                    <div className="space-y-3">
+                      {block.items.map((ex, localExIndex) => {
+                        const currentGlobalIndex = globalExIndex++;
+                        return (
+                          <div key={localExIndex} className="rounded-xl border border-gray-200 dark:border-gray-700 p-3">
+                            <div className="flex items-start justify-between gap-3">
+                              <div>
+                                <div className="font-medium">{ex.name}</div>
+                                <div className="text-sm text-gray-600 dark:text-gray-400">Sets: {ex.sets} • Reps: {ex.reps}</div>
+                                {ex.notes && <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">{ex.notes}</div>}
+                              </div>
+                              <div className="flex gap-1 flex-wrap">
+                                {Array.from({ length: ex.sets }).map((_, setIdx) => {
+                                  const key = `${currentGlobalIndex}_${setIdx}`;
+                                  const done = !!session.completed[key];
+                                  return (
+                                    <button
+                                      key={key}
+                                      onClick={() => toggleSet(currentGlobalIndex, setIdx)}
+                                      className={classNames(
+                                        "w-8 h-8 rounded-full border text-sm font-semibold",
+                                        done 
+                                          ? "bg-green-600 text-white border-green-600" 
+                                          : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 border-gray-300 dark:border-gray-600"
+                                      )}
+                                      aria-label={`Toggle set ${setIdx + 1} for ${ex.name}`}
+                                    >{setIdx + 1}</button>
+                                  );
+                                })}
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex gap-1 flex-wrap">
-                            {Array.from({ length: ex.sets }).map((_, setIdx) => {
-                              const key = `${exIndex}_${setIdx}`;
-                              const done = !!session.completed[key];
-                              return (
-                                <button
-                                  key={key}
-                                  onClick={() => toggleSet(exIndex, setIdx)}
-                                  className={classNames(
-                                    "w-8 h-8 rounded-full border text-sm font-semibold",
-                                    done ? "bg-green-600 text-white border-green-600" : "bg-white hover:bg-gray-100"
-                                  )}
-                                  aria-label={`Toggle set ${setIdx + 1} for ${ex.name}`}
-                                >{setIdx + 1}</button>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              ))}
+                        );
+                      })}
+                    </div>
+                  </section>
+                ));
+              })()}
 
-              <section className="border rounded-2xl p-4">
+              <section className="border border-gray-200 dark:border-gray-700 rounded-2xl p-4">
                 <h3 className="font-semibold mb-2">Session Notes</h3>
                 <textarea
                   value={session.notes || ""}
                   onChange={(e) => updateSessionNotes(e.target.value)}
                   placeholder="Load used, RPE, tweaks, substitutions…"
-                  className="w-full min-h-[100px] border rounded-xl p-3 focus:outline-none focus:ring"
+                  className="w-full min-h-[100px] border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-xl p-3 focus:outline-none focus:ring focus:ring-blue-500 dark:focus:ring-blue-400"
                 />
               </section>
             </div>
           )}
         </main>
 
-        <footer className="text-xs text-gray-500 mt-6 space-y-1">
-          <p>Tip: If a machine is taken, swap to a close alternative; keep the stimulus hard & joint-friendly.</p>
-          <p>Data saves to your browser (localStorage). Use Export/Import to move between devices.</p>
+        <footer className="mt-6 space-y-3">
+          <div className="flex justify-center">
+            <button
+              onClick={toggleDarkMode}
+              className="flex items-center gap-2 px-4 py-2 rounded-full text-sm bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            >
+              <span className="text-lg">{isDarkMode ? '☀️' : '🌙'}</span>
+              <span>{isDarkMode ? 'Light Mode' : 'Dark Mode'}</span>
+            </button>
+          </div>
+          <div className="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+            <p>Tip: If a machine is taken, swap to a close alternative; keep the stimulus hard & joint-friendly.</p>
+            <p>Data saves to your browser (localStorage).</p>
+          </div>
         </footer>
       </div>
     </div>
