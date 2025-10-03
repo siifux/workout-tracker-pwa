@@ -145,10 +145,26 @@ export default function App() {
 
   const toggleSet = (exIndex, setIndex) => {
     const key = `${exIndex}_${setIndex}`;
-    const completed = { ...session.completed, [key]: !session.completed[key] };
+    const isCurrentlyCompleted = session.completed[key];
+    const newCompleted = { ...session.completed };
+    
+    if (isCurrentlyCompleted) {
+      // If unchecking a set, uncheck this set and all sets after it for this exercise
+      for (let i = setIndex; i < 10; i++) { // Assuming max 10 sets per exercise
+        const laterKey = `${exIndex}_${i}`;
+        delete newCompleted[laterKey];
+      }
+    } else {
+      // If checking a set, auto-complete all previous sets for this exercise
+      for (let i = 0; i <= setIndex; i++) {
+        const prevKey = `${exIndex}_${i}`;
+        newCompleted[prevKey] = true;
+      }
+    }
+    
     setData((d) => ({
       ...d,
-      history: { ...d.history, [sessionKey]: { ...session, completed } },
+      history: { ...d.history, [sessionKey]: { ...session, completed: newCompleted } },
     }));
   };
 
