@@ -85,6 +85,7 @@ const storageKey = "sixDaySplitTracker_v1";
 export default function App() {
   const [legVariant, setLegVariant] = useState("A"); // A = Hamstrings, B = Quads
   const [todayIndex, setTodayIndex] = useState(getTodayIndex());
+  const [showDaySelector, setShowDaySelector] = useState(false);
   const [isDarkMode, setIsDarkMode] = useState(() => {
     try {
       const saved = localStorage.getItem('darkMode');
@@ -185,23 +186,30 @@ export default function App() {
     });
   };
 
+  const selectDay = (dayIndex) => {
+    setTodayIndex(dayIndex);
+    setShowDaySelector(false);
+  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 p-4 sm:p-8">
       <div className="max-w-3xl mx-auto">
         <header className="flex items-center justify-between mb-6">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold">6-Day Workout Split Tracker</h1>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Exact exercises from the video • One leg day (alternating Variant A/B)</p>
+            <h1 className="text-2xl sm:text-3xl font-bold">Workout Tracker</h1>
           </div>
           <div className="flex gap-2 items-center">
             <button
               className="px-3 py-2 rounded-2xl shadow bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
               onClick={() => setTodayIndex((i) => (i + dayOrder.length - 1) % dayOrder.length)}
             >◀</button>
-            <div className="px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 shadow text-sm font-medium">
+            <button 
+              className="px-3 py-2 rounded-2xl bg-white dark:bg-gray-800 shadow text-sm font-medium hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors cursor-pointer"
+              onClick={() => setShowDaySelector(true)}
+            >
               {currentDayLabel}
-            </div>
+            </button>
             <button
               className="px-3 py-2 rounded-2xl shadow bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-sm"
               onClick={() => setTodayIndex((i) => (i + 1) % dayOrder.length)}
@@ -246,6 +254,44 @@ export default function App() {
             </div>
           </div>
         </div>
+
+        {/* Day Selector Modal */}
+        {showDaySelector && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg max-w-sm w-full p-6">
+              <h3 className="text-lg font-semibold mb-4 text-center">Select Workout Day</h3>
+              <div className="space-y-2">
+                {dayOrder.map((day, index) => (
+                  <button
+                    key={index}
+                    onClick={() => selectDay(index)}
+                    className={classNames(
+                      "w-full p-3 rounded-xl text-left transition-colors",
+                      index === todayIndex
+                        ? "bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-100 border-2 border-blue-200 dark:border-blue-700"
+                        : "bg-gray-50 dark:bg-gray-700 hover:bg-gray-100 dark:hover:bg-gray-600 border-2 border-transparent"
+                    )}
+                  >
+                    <div className="font-medium">{day}</div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400">
+                      {day === "Push" && "Chest-focused Push"}
+                      {day === "Pull & Abs" && "Back-focused Pull + Abs"}
+                      {day === "Leg Day" && `${legVariant === "A" ? "Hamstring-Focused" : "Quad-Focused"} (Variant ${legVariant})`}
+                      {day === "Upper Body" && "Full Upper"}
+                      {(day === "Rest" || day === "Rest (2)") && "Rest & Recovery"}
+                    </div>
+                  </button>
+                ))}
+              </div>
+              <button
+                onClick={() => setShowDaySelector(false)}
+                className="w-full mt-4 px-4 py-2 bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 rounded-xl transition-colors"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
 
         <main className="bg-white dark:bg-gray-800 rounded-2xl shadow p-4 sm:p-6">
           <h2 className="text-xl font-semibold mb-1">{currentDayLabel} <span className="text-gray-500 dark:text-gray-400 text-base">{titleSuffix}</span></h2>
